@@ -1,4 +1,6 @@
 import docker
+import time
+import asyncio
 
 try:
     client = docker.from_env()
@@ -31,10 +33,13 @@ def deploy_app_service(image_name: str, app_name: str, external_port: int):
 
         container = client.containers.run(
             image_name,
-            name=f"Haab-app_name",
+            name=f"haab-{app_name}",
             ports={'80/tcp': external_port},
             detach=True
         )
+        
+        return {"status": "success", "container_id": container.id}
+
     except Exception as e:
         return {"status": "error", "message": str(e)}
     
@@ -65,3 +70,20 @@ def list_haab_containers():
         }
         for c in containers if c.name.startswith("haab-")
     ]
+
+def stream_container_logs(container_id_or_name: str):
+    if not client:
+        yield "Error: docker client not initialized"
+        return
+    
+    for _ in range(3):  # Retry mechanism
+        try:
+            container = client.containers.get(container_id_or_name)
+            for line in container.logs(stream=True, follow=True, tail=10):
+                yield line.decode('utf-8')
+            break
+        except Exception:
+            time.sleep(1)
+            continue
+    else:
+        yield f"Error: No se pudo encontrar el contenedor {container_id_or_name}."
