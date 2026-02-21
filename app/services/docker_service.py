@@ -17,7 +17,7 @@ def create_container(image: str, name: str, ports: dict):
     if not client:
         return {"error": "Docker client not initialized"}
     try:
-        container = client.continers.run(image, name=name, ports=ports, detach=True)
+        container = client.containers.run(image, name=name, ports=ports, detach=True)
         return {"id": container.id, "status": "deployed"}
     except Exception as e:
         return {"error": str(e)}
