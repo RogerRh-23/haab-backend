@@ -12,8 +12,8 @@ from app.services.docker_service import (
     list_haab_containers,
     stream_container_logs
 )
-from .database import get_db, engine
-from . import models, schemas
+from .app.database import get_db, engine
+from .app import models, schemas
 from typing import List
 
 app = FastAPI(title="Haab PaaS API")
@@ -118,24 +118,5 @@ async def websocket_logs(websocket: WebSocket, container_name: str):
         await websocket.send_text(f"Error en websocket: {str(e)}")
     finally:
         await websocket.close()
-
-@app.get("/apps", response_model=List[schemas.ApplicationResponse])
-def get_apps(db: Session = Depends(get_db)):
-    apps = db.query(models.Application).all()
-    return apps
-
-@app.get("/apps/{app_id}/logs")
-def get_app_logs(app_id: int, db: Session = Depends(get_db)):
-    app_record = db.query(models.Application).filter(models.Application.id == app_id).first()
-    
-    if not app_record:
-        raise HTTPException(status_code=404, detail="La aplicación no existe en la base de datos")
-    
-    try:
-        container = client.containers.get(f"haab-{app_record.name}")
-        logs = container.logs(tail=100).decode('utf-8')
-        return {"name": app_record.name, "logs": logs}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener los logs: {str(e)}")
 
 models.Base.metadata.create_all(bind=engine)
