@@ -1,4 +1,6 @@
 import docker
+
+from .app.models.models import models
 client = docker.from_env()
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -12,8 +14,8 @@ from app.services.docker_service import (
     list_haab_containers,
     stream_container_logs
 )
-from .app.database import get_db, engine
-from .app import models, schemas
+from .app.core.database import get_db, engine
+from .app.schemas.schemas import schemas
 from typing import List
 
 app = FastAPI(title="Haab PaaS API")
